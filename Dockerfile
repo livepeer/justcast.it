@@ -1,18 +1,17 @@
-FROM node:14-slim AS build
-
-RUN apt update && apt install -y rsync
+FROM golang:1.16 AS build
 
 WORKDIR /usr/build
 
-COPY package.json yarn.lock ./
-COPY server/package.json ./server/
-COPY client/package.json ./client/
-RUN yarn --frozen-lockfile
+COPY go.mod go.sum ./
+RUN go mod download
 
-COPY . ./
-RUN yarn build
+ARG version
+RUN echo $version
 
-FROM node:14-slim
+COPY . .
+RUN GOOS=linux GOARCH=amd64 make "version=$version"
+
+FROM debian:stretch-slim
 
 RUN apt update && \
   apt install -y ffmpeg && \
@@ -21,11 +20,8 @@ RUN ffmpeg -version
 
 WORKDIR /usr/app
 
-COPY package.json yarn.lock ./
-COPY server/package.json ./server/
-# skip client/package.json
-RUN yarn --frozen-lockfile --production
+RUN mkdir ./out
+COPY --from=build /usr/build/jsfiddle ./jsfiddle
+COPY --from=build /usr/build/webrtmp ./
 
-COPY --from=build /usr/build/dist ./dist
-
-CMD [ "yarn", "start:prod" ]
+ENTRYPOINT [ "./webrtmp" ]
