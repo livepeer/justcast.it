@@ -56,7 +56,7 @@ func NewSocketWriter(ctx context.Context) (w io.WriteCloser, path string, err er
 				break
 			}
 
-			conn.SetDeadline(time.Now().Add(5 * time.Second))
+			conn.SetDeadline(time.Now().Add(15 * time.Second))
 			n, err = conn.Write(buf[:n])
 			if err != nil {
 				glog.Infof("Error writing to unix socket: %v\n", err)

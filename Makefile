@@ -9,9 +9,9 @@ build:
 	CGO_ENABLED=0 go build -o webrtmp -ldflags="$(ldflags)" main.go
 
 run:
-	mkdir out
+	mkdir -p out
 	LP_HOST=0.0.0.0 LP_ENABLE_FIDDLE=true LP_STRICT_PROTOCOL=false \
-			go run -ldflags="$(ldflags)" main.go
+			go run -ldflags="$(ldflags)" main.go $(args)
 
 docker: docker_build docker_run
 publish: docker_build docker_push

@@ -41,9 +41,18 @@ func Handler(rtmpUrl string, strict bool) (http.Handler, error) {
 
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
+		ws.SetCloseHandler(func(code int, text string) error {
+			cancel()
+			message := websocket.FormatCloseMessage(code, "")
+			ws.WriteControl(websocket.CloseMessage, message, time.Now().Add(time.Second))
+			glog.Info("Websocket closed")
+			return nil
+		})
+
 		stdin, pipe := io.Pipe()
 		go func() {
 			defer cancel()
+			defer pipe.Close()
 			err := copyWsMessages(ws, pipe)
 			if err != nil {
 				glog.Errorf("Error copying WebSocket messages url=%q err=%q", req.URL, err)
@@ -73,6 +82,7 @@ func Handler(rtmpUrl string, strict bool) (http.Handler, error) {
 func copyWsMessages(ws *websocket.Conn, dest io.Writer) error {
 	buf := make([]byte, upgrader.ReadBufferSize)
 	for {
+		ws.SetReadDeadline(time.Now().Add(20 * time.Second))
 		_, reader, err := ws.NextReader()
 		if _, isClosed := err.(*websocket.CloseError); isClosed {
 			return nil
