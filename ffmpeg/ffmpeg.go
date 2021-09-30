@@ -25,6 +25,8 @@ var videoTranscodeArgs = append([]string{}, append(baseArgs,
 	"-c:v", "libx264",
 	"-x264-params", "keyint=60:scenecut=0")...)
 
+var realTimeInputArgs = []string{"-fflags", "nobuffer", "-flags", "low_delay", "-strict", "experimental"}
+
 func delayedCtx(ctx context.Context, delay time.Duration) context.Context {
 	delayed, cancel := context.WithCancel(context.Background())
 	go func() {
@@ -38,6 +40,7 @@ func delayedCtx(ctx context.Context, delay time.Duration) context.Context {
 func Run(ctx context.Context, opts Opts) error {
 	var args []string
 	for _, in := range opts.Input {
+		args = append(args, realTimeInputArgs...)
 		args = append(args, "-i", in)
 	}
 	if opts.Stdin != nil && len(opts.Input) == 0 {
