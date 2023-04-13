@@ -1,4 +1,4 @@
-FROM golang:1.20 AS build
+FROM golang:1.20-buster AS build
 
 WORKDIR /usr/build
 
@@ -11,12 +11,13 @@ RUN echo $version
 COPY . .
 RUN GOOS=linux GOARCH=amd64 make "version=$version"
 
-FROM debian:stretch-slim
+FROM debian:buster-slim
 
 RUN apt update && \
-  apt install -y ffmpeg && \
+  apt install -y ffmpeg ca-certificates && \
   apt clean && apt autoclean
-RUN ffmpeg -version
+RUN	ffmpeg -version \
+  && update-ca-certificates
 
 WORKDIR /usr/app
 
